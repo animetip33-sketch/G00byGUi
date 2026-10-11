@@ -8,7 +8,6 @@ local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Удаляем старое гуи
 if PlayerGui:FindFirstChild("G00byExecutorMenu_v2") then
     PlayerGui["G00byExecutorMenu_v2"]:Destroy()
 end
@@ -18,7 +17,6 @@ ScreenGui.Name = "G00byExecutorMenu_v2"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- Обводка
 local function addBorder(parent)
     local border = Instance.new("UIStroke")
     border.Color = Color3.fromRGB(0, 100, 0)
@@ -28,7 +26,6 @@ local function addBorder(parent)
     return border
 end
 
--- Drag
 local function makeDraggable(frame, handle)
     local dragging, dragInput, dragStart, startPos
     handle.InputBegan:Connect(function(input)
@@ -54,9 +51,7 @@ local function makeDraggable(frame, handle)
     end)
 end
 
--- ======================
--- СОХРАНЕНИЕ ЧЕРЕЗ getgenv (работает в Velocity)
--- ======================
+-- Сохранение через getgenv
 local function loadData()
     if getgenv().G00byAuthSave then
         return getgenv().G00byAuthSave
@@ -184,7 +179,6 @@ local CloseBtn2 = CloseBtn1:Clone()
 CloseBtn2.Parent = MainFrame
 CloseBtn2.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
--- Аватар + ник
 local ProfileFrame = Instance.new("Frame")
 ProfileFrame.Size = UDim2.new(0, 90, 0, 110)
 ProfileFrame.Position = UDim2.new(0, 5, 1, -115)
@@ -212,7 +206,6 @@ ProfileName.Font = Enum.Font.SourceSansBold
 ProfileName.TextWrapped = true
 ProfileName.Parent = ProfileFrame
 
--- Вкладки
 local TabsFrame = Instance.new("Frame")
 TabsFrame.Size = UDim2.new(0, 100, 1, -155)
 TabsFrame.Position = UDim2.new(0, 0, 0, 30)
@@ -232,13 +225,13 @@ local function createPage(name)
     local page = Instance.new("ScrollingFrame")
     page.Size = UDim2.new(1, 0, 1, 0)
     page.BackgroundTransparency = 1
-    page.CanvasSize = UDim2.new(0, 0, 0, 400)
+    page.CanvasSize = UDim2.new(0, 0, 0, 600)
     page.ScrollBarThickness = 4
     page.Visible = false
     page.Parent = ContentFrame
     
     local layout = Instance.new("UIListLayout")
-    layout.Padding = UDim.new(0, 8)
+    layout.Padding = UDim.new(0, 6)
     layout.SortOrder = Enum.SortOrder.LayoutOrder
     layout.Parent = page
     
@@ -271,9 +264,15 @@ for i, tabName in ipairs(tabList) do
 end
 showPage("Player")
 
-local function createTextBox(parent, placeholder)
+-- Универсальная функция: поле + кнопка
+local function createInputWithButton(parent, placeholder, buttonText)
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(1, -10, 0, 70)
+    container.BackgroundTransparency = 1
+    container.Parent = parent
+
     local box = Instance.new("TextBox")
-    box.Size = UDim2.new(1, -10, 0, 35)
+    box.Size = UDim2.new(1, 0, 0, 32)
     box.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
     box.TextColor3 = Color3.fromRGB(255, 255, 255)
     box.PlaceholderText = placeholder
@@ -281,66 +280,99 @@ local function createTextBox(parent, placeholder)
     box.Text = ""
     box.TextSize = 14
     box.Font = Enum.Font.SourceSans
-    box.Parent = parent
+    box.Parent = container
     addBorder(box)
-    return box
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 28)
+    btn.Position = UDim2.new(0, 0, 0, 38)
+    btn.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+    btn.TextColor3 = Color3.fromRGB(0, 200, 0)
+    btn.Text = buttonText or "Применить"
+    btn.TextSize = 14
+    btn.Font = Enum.Font.SourceSansBold
+    btn.Parent = container
+    addBorder(btn)
+
+    return box, btn
 end
 
 -- ==========================================
--- ФУНКЦИОНАЛ
+-- PLAYER
 -- ==========================================
--- Player
-local WalkSpeedBox = createTextBox(PlayerPage, "Скорость бега (WalkSpeed)")
-WalkSpeedBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed and tonumber(WalkSpeedBox.Text) then
-        local hum = (LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()):FindFirstChildOfClass("Humanoid")
-        if hum then hum.WalkSpeed = tonumber(WalkSpeedBox.Text) end
-    end
-end)
+local WalkSpeedBox, WalkSpeedBtn = createInputWithButton(PlayerPage, "Скорость бега (WalkSpeed)", "Применить WalkSpeed")
+local JumpPowerBox, JumpPowerBtn = createInputWithButton(PlayerPage, "Сила прыжка (JumpPower)", "Применить JumpPower")
 
-local JumpPowerBox = createTextBox(PlayerPage, "Сила прыжка (JumpPower)")
-JumpPowerBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed and tonumber(JumpPowerBox.Text) then
+local function applyWalkSpeed()
+    local val = tonumber(WalkSpeedBox.Text)
+    if val then
         local hum = (LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()):FindFirstChildOfClass("Humanoid")
-        if hum then 
-            hum.UseJumpPower = true 
-            hum.JumpPower = tonumber(JumpPowerBox.Text) 
+        if hum then hum.WalkSpeed = val end
+    end
+end
+
+local function applyJumpPower()
+    local val = tonumber(JumpPowerBox.Text)
+    if val then
+        local hum = (LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()):FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.UseJumpPower = true
+            hum.JumpPower = val
         end
     end
-end)
+end
 
--- Game
-local SkyboxBox = createTextBox(GamePage, "ID Декала для Скайбокса + Enter")
-local PartsBox = createTextBox(GamePage, "ID Декала для всех Партов + Enter")
+WalkSpeedBtn.MouseButton1Click:Connect(applyWalkSpeed)
+JumpPowerBtn.MouseButton1Click:Connect(applyJumpPower)
 
-local MusicRow = Instance.new("Frame")
-MusicRow.Size = UDim2.new(1, -10, 0, 50)
-MusicRow.BackgroundTransparency = 1
-MusicRow.Parent = GamePage
+WalkSpeedBox.FocusLost:Connect(function(enter) if enter then applyWalkSpeed() end end)
+JumpPowerBox.FocusLost:Connect(function(enter) if enter then applyJumpPower() end end)
+
+-- ==========================================
+-- GAME
+-- ==========================================
+local SkyboxBox, SkyboxBtn = createInputWithButton(GamePage, "ID Декала для Скайбокса", "Применить Skybox")
+local PartsBox, PartsBtn = createInputWithButton(GamePage, "ID Декала для всех Партов", "Применить на Parts")
+
+-- Музыка (отдельно, потому что слайдер)
+local MusicContainer = Instance.new("Frame")
+MusicContainer.Size = UDim2.new(1, -10, 0, 90)
+MusicContainer.BackgroundTransparency = 1
+MusicContainer.Parent = GamePage
+
+local SongBox = Instance.new("TextBox")
+SongBox.Size = UDim2.new(1, 0, 0, 32)
+SongBox.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+SongBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SongBox.PlaceholderText = "ID Песни"
+SongBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
+SongBox.Text = ""
+SongBox.TextSize = 14
+SongBox.Font = Enum.Font.SourceSans
+SongBox.Parent = MusicContainer
+addBorder(SongBox)
 
 local Slider = Instance.new("TextButton")
-Slider.Size = UDim2.new(0.3, 0, 0, 20)
-Slider.Position = UDim2.new(0, 0, 0.3, 0)
+Slider.Size = UDim2.new(0.35, 0, 0, 26)
+Slider.Position = UDim2.new(0, 0, 0, 38)
 Slider.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 Slider.TextColor3 = Color3.fromRGB(0, 150, 0)
 Slider.Text = "Спид: 1"
 Slider.Font = Enum.Font.SourceSans
 Slider.TextSize = 12
-Slider.Parent = MusicRow
+Slider.Parent = MusicContainer
 addBorder(Slider)
 
-local SongBox = Instance.new("TextBox")
-SongBox.Size = UDim2.new(0.65, 0, 0, 35)
-SongBox.Position = UDim2.new(0.35, 0, 0.1, 0)
-SongBox.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-SongBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-SongBox.PlaceholderText = "ID Песни + Enter"
-SongBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
-SongBox.Text = ""
-SongBox.TextSize = 14
-SongBox.Font = Enum.Font.SourceSans
-SongBox.Parent = MusicRow
-addBorder(SongBox)
+local SongBtn = Instance.new("TextButton")
+SongBtn.Size = UDim2.new(0.62, 0, 0, 26)
+SongBtn.Position = UDim2.new(0.38, 0, 0, 38)
+SongBtn.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+SongBtn.TextColor3 = Color3.fromRGB(0, 200, 0)
+SongBtn.Text = "Применить Музыку"
+SongBtn.TextSize = 13
+SongBtn.Font = Enum.Font.SourceSansBold
+SongBtn.Parent = MusicContainer
+addBorder(SongBtn)
 
 local currentPitch = 1
 local isSliding = false
@@ -356,7 +388,7 @@ end
 
 Slider.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        isSliding = true 
+        isSliding = true
         updateSlider(input)
     end
 end)
@@ -368,27 +400,27 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
-        isSliding = false 
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isSliding = false
     end
 end)
 
-SkyboxBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed and SkyboxBox.Text ~= "" then
+local function applySkybox()
+    if SkyboxBox.Text ~= "" then
         local id = string.match(SkyboxBox.Text, "%d+") or SkyboxBox.Text
         local sky = Lighting:FindFirstChildOfClass("Sky") or Instance.new("Sky", Lighting)
         local asset = "rbxassetid://" .. id
-        sky.SkyboxBk = asset 
-        sky.SkyboxDn = asset 
-        sky.SkyboxFt = asset 
-        sky.SkyboxLf = asset 
-        sky.SkyboxRt = asset 
+        sky.SkyboxBk = asset
+        sky.SkyboxDn = asset
+        sky.SkyboxFt = asset
+        sky.SkyboxLf = asset
+        sky.SkyboxRt = asset
         sky.SkyboxUp = asset
     end
-end)
+end
 
-PartsBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed and PartsBox.Text ~= "" then
+local function applyParts()
+    if PartsBox.Text ~= "" then
         local id = string.match(PartsBox.Text, "%d+") or PartsBox.Text
         for _, obj in pairs(workspace:GetDescendants()) do
             if obj:IsA("BasePart") then
@@ -401,55 +433,39 @@ PartsBox.FocusLost:Connect(function(enterPressed)
             end
         end
     end
-end)
+end
 
-SongBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed and SongBox.Text ~= "" then
+local function applySong()
+    if SongBox.Text ~= "" then
         local id = string.match(SongBox.Text, "%d+") or SongBox.Text
-        local old = SoundService:FindFirstChild("G00byAudio") 
+        local old = SoundService:FindFirstChild("G00byAudio")
         if old then old:Destroy() end
         local sound = Instance.new("Sound")
-        sound.Name = "G00byAudio" 
+        sound.Name = "G00byAudio"
         sound.SoundId = "rbxassetid://" .. id
-        sound.Volume = 10 
-        sound.PlaybackSpeed = currentPitch 
-        sound.Looped = true 
+        sound.Volume = 10
+        sound.PlaybackSpeed = currentPitch
+        sound.Looped = true
         sound.Parent = SoundService
         sound:Play()
     end
-end)
+end
 
--- Function
-local Func1 = createTextBox(FunctionPage, "1: Стандартный Notify")
-local Func2 = createTextBox(FunctionPage, "2: Hint на 10 сек")
-local Func3 = createTextBox(FunctionPage, "3: Большое сообщение (Msg)")
-local Func4 = createTextBox(FunctionPage, "4: Кастомный Notify справа снизу")
+SkyboxBtn.MouseButton1Click:Connect(applySkybox)
+PartsBtn.MouseButton1Click:Connect(applyParts)
+SongBtn.MouseButton1Click:Connect(applySong)
 
-Func1.FocusLost:Connect(function(enterPressed)
-    if enterPressed and Func1.Text ~= "" then
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "G00by", 
-            Text = Func1.Text, 
-            Duration = 5
-        })
-    end
-end)
+SkyboxBox.FocusLost:Connect(function(enter) if enter then applySkybox() end end)
+PartsBox.FocusLost:Connect(function(enter) if enter then applyParts() end end)
+SongBox.FocusLost:Connect(function(enter) if enter then applySong() end end)
 
-Func2.FocusLost:Connect(function(enterPressed)
-    if enterPressed and Func2.Text ~= "" then
-        local hint = Instance.new("Hint", workspace) 
-        hint.Text = Func2.Text
-        task.delay(10, function() hint:Destroy() end)
-    end
-end)
-
-Func3.FocusLost:Connect(function(enterPressed)
-    if enterPressed and Func3.Text ~= "" then
-        local msg = Instance.new("Message", workspace) 
-        msg.Text = Func3.Text
-        task.delay(5, function() msg:Destroy() end)
-    end
-end)
+-- ==========================================
+-- FUNCTION
+-- ==========================================
+local Func1Box, Func1Btn = createInputWithButton(FunctionPage, "1: Стандартный Notify", "Отправить Notify")
+local Func2Box, Func2Btn = createInputWithButton(FunctionPage, "2: Hint на 10 сек", "Показать Hint")
+local Func3Box, Func3Btn = createInputWithButton(FunctionPage, "3: Большое сообщение (Msg)", "Показать Message")
+local Func4Box, Func4Btn = createInputWithButton(FunctionPage, "4: Кастомный Notify справа снизу", "Кастомный Notify")
 
 local function createCustomNotify(text)
     local notif = Instance.new("Frame")
@@ -458,34 +474,66 @@ local function createCustomNotify(text)
     notif.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     notif.Parent = ScreenGui
     addBorder(notif)
-    
+
     local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, -10, 1, -10) 
+    lbl.Size = UDim2.new(1, -10, 1, -10)
     lbl.Position = UDim2.new(0, 5, 0, 5)
-    lbl.BackgroundTransparency = 1 
+    lbl.BackgroundTransparency = 1
     lbl.TextColor3 = Color3.fromRGB(0, 200, 0)
-    lbl.TextWrapped = true 
-    lbl.Text = text 
-    lbl.Font = Enum.Font.SourceSansBold 
-    lbl.TextSize = 14 
+    lbl.TextWrapped = true
+    lbl.Text = text
+    lbl.Font = Enum.Font.SourceSansBold
+    lbl.TextSize = 14
     lbl.Parent = notif
-    
+
     notif:TweenPosition(UDim2.new(1, -270, 1, -100), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.5, true)
-    
+
     task.delay(5, function()
         pcall(function()
             notif:TweenPosition(UDim2.new(1, 20, 1, -100), Enum.EasingDirection.In, Enum.EasingStyle.Quart, 0.5, true)
-            task.wait(0.5) 
+            task.wait(0.5)
             notif:Destroy()
         end)
     end)
 end
 
-Func4.FocusLost:Connect(function(enterPressed)
-    if enterPressed and Func4.Text ~= "" then 
-        createCustomNotify(Func4.Text) 
+Func1Btn.MouseButton1Click:Connect(function()
+    if Func1Box.Text ~= "" then
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "G00by",
+            Text = Func1Box.Text,
+            Duration = 5
+        })
     end
 end)
+
+Func2Btn.MouseButton1Click:Connect(function()
+    if Func2Box.Text ~= "" then
+        local hint = Instance.new("Hint", workspace)
+        hint.Text = Func2Box.Text
+        task.delay(10, function() hint:Destroy() end)
+    end
+end)
+
+Func3Btn.MouseButton1Click:Connect(function()
+    if Func3Box.Text ~= "" then
+        local msg = Instance.new("Message", workspace)
+        msg.Text = Func3Box.Text
+        task.delay(5, function() msg:Destroy() end)
+    end
+end)
+
+Func4Btn.MouseButton1Click:Connect(function()
+    if Func4Box.Text ~= "" then
+        createCustomNotify(Func4Box.Text)
+    end
+end)
+
+-- Enter тоже работает
+Func1Box.FocusLost:Connect(function(enter) if enter and Func1Box.Text ~= "" then Func1Btn.MouseButton1Click:Fire() end end)
+Func2Box.FocusLost:Connect(function(enter) if enter and Func2Box.Text ~= "" then Func2Btn.MouseButton1Click:Fire() end end)
+Func3Box.FocusLost:Connect(function(enter) if enter and Func3Box.Text ~= "" then Func3Btn.MouseButton1Click:Fire() end end)
+Func4Box.FocusLost:Connect(function(enter) if enter and Func4Box.Text ~= "" then Func4Btn.MouseButton1Click:Fire() end end)
 
 -- ==========================================
 -- LOGIN
@@ -494,24 +542,23 @@ EnterBtn.MouseButton1Click:Connect(function()
     if KeyInput.Text == "g00b" then
         local targetUser = UserInput.Text ~= "" and UserInput.Text or LocalPlayer.Name
         local targetId = 1
-        
+
         pcall(function()
             targetId = Players:GetUserIdFromNameAsync(targetUser)
         end)
-        
+
         AvatarImage.Image = "rbxthumb://type=AvatarHeadShot&id=" .. targetId .. "&w=150&h=150"
         ProfileName.Text = targetUser .. "\n[" .. ModeInput.Text .. "]"
-        
-        -- Сохраняем
+
         saveData(UserInput.Text, PassInput.Text, ModeInput.Text)
-        
+
         AuthFrame:Destroy()
         MainFrame.Visible = true
     else
         KeyInput.Text = ""
         KeyInput.PlaceholderText = "НЕВЕРНЫЙ КЛЮЧ!"
-        task.delay(2, function() 
-            KeyInput.PlaceholderText = "Введите ключ (g00b)..." 
+        task.delay(2, function()
+            KeyInput.PlaceholderText = "Введите ключ (g00b)..."
         end)
     end
 end)
